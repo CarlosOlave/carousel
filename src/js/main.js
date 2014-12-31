@@ -27,7 +27,7 @@ var init = function() {
 		});
 	}
 
-	// Set event handlers modes
+	// Set event handlers modes 
 	modes();
 };
 
