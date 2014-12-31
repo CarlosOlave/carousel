@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <link href="src/css/carousel.css" rel="stylesheet"/>
+    <link href="src/css/bootstrap.min.css" rel="stylesheet"/>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="src/js/carousel.js"></script>
+    <script src="src/js/main.js"></script>
+    <script src="src/js/bootstrap.min.js"></script>
+</head>
+<body>
+    <section id="body-section" class="bg-light-gray">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12 upper-container">
+
+                    <section id='carousel-container'>
+                        <div id='carousel' data-reflection='true' data-mode='cylinder' data-reflection-color='rgb(74,86,10)'>
+                            <div class='image-container'>
+                                <img src='src/images/amazon_1.jpg'>
+                            </div>
+                            <div class='image-container'>
+                                <img src='src/images/amazon_2.jpg'>
+                            </div>
+                            <div class='image-container'>
+                                <img src='src/images/amazon_3.jpg'>
+                            </div>
+                            <div class='image-container'>
+                                <img src='src/images/amazon_4.jpg'>
+                            </div>
+                            <div class='image-container'>
+                                <img src='src/images/amazon_5.jpg'>
+                            </div>
+                            <div class='image-container'>
+                                <img src='src/images/amazon_6.jpg'>
+                            </div>
+                            <div class='image-container'>
+                                <img src='src/images/amazon_7.jpg'>
+                            </div>
+                            <div class='image-container'>
+                                <img src='src/images/amazon_8.jpg'>
+                            </div>
+                            <div class='image-container'>
+                                <img src='src/images/amazon_9.jpg'>
+                            </div>
+                        </div>
+                    </section>
+
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-4 lower-container-types">
+                    <div id="mode-group" class="btn-group" data-toggle="buttons">
+                        <label class="btn btn-primary active" id="cylinder">
+                            <input type="radio" name="mode" checked='checked'> Cylinder
+                        </label>
+                        <label class="btn btn-primary" id="timeMachine">
+                            <input type="radio" name="mode"> Time Machine
+                        </label>
+                        <label class="btn btn-primary" id="coverFlow">
+                            <input type="radio" name="mode"> CoverFlow
+                        </label>
+                    </div>
+                </div>
+                <div class="col-lg-8 lower-container-description">
+                    <div id="github-section">
+                        <h4>
+                            Carousel is my first widget and is a work in progress. The motivation for this project was my interest in learning CSS 3D
+                            Transformations and to build a cool easy to plugin widget. Currently the widget supports three
+                            modes (Cylinder, Time Machine, and Cover Flow). If you want to get the code please visit <a href="https://github.com/CarlosOlave/carousel">Carousel Widget Github.</a>
+                        </h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>
