@@ -88,7 +88,7 @@ function Carousel () {
 	};
 
 	////////////////////////////////////////////
-	// Private
+	// Private 
 
 	// Initialize
 	var functionInit = function () {
