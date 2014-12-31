@@ -1,0 +1,19 @@
+#ex1Slider .slider-selection {
+    background: #BABABA;
+}
+
+.lower-container-sliders {
+    margin-top: 150px;
+}
+
+.lower-container-types {
+    margin-top: 150px;
+}
+
+.lower-container-description {
+    margin-top: 150px;
+}
+
+#rotate-x {
+    height: 30px;
+}
