@@ -6,53 +6,35 @@
 
 function Carousel () {
 
-	// Closure
-	var self = this;
-
 	////////////////////////////////////////////
 	// Public
 
 	// Creates the carousel
-	self.create = function () {
+	this.create = function () {
 
 		// Initialize carousel
-		var exception = functionInit();
+		var exception = initialize();
 		if (exception !== null) {
 
 			alert(exception);
 		}
 
 		// Detect Browser
-		exception = functionDetectBrowser();
+		exception = detectBrowser();
 		if (exception !== null) {
 
 			alert(exception);
 		}
 
-		// Create body content
-		exception = functionCreateBodyCarousel();
+		// Add reflection element to the images
+		exception = createReflectiveElements();
 		if (exception !== null) {
 
 			alert(exception);
 		}
 
-		// TO DO....
-		// Create sliders
-		//exception = functionCreateSliders();
-		//if (exception !== null) {
-
-		//	alert(exception);
-		//}
-
-		// Style body content
-		exception = functionStyleBodyCarousel();
-		if (exception !== null) {
-
-			alert(exception);
-		}
-
-		// Bind events to body
-		exception =	functionBindEvents();
+		// Set initial state of carousel
+		exception = setCarouselViewMode();
 		if (exception !== null) {
 
 			alert(exception);
@@ -60,7 +42,7 @@ function Carousel () {
 	};
 
 	// Refresh carousel with given mode
-	self.refresh = function (mode) {
+	this.refresh = function (mode) {
 
 		// Nothing to process.
 		if ((mode === null) ||
@@ -71,50 +53,27 @@ function Carousel () {
 			return null;
 		}
 
-		// reset carousel with the matching mode.
-		if (mode === "cylinder") {
-
-			m_currentCarouselMode = "cylinder";
-			functionDefaultCylinderTransformation();
-		} else if (mode === "timeMachine") {
-
-			m_currentCarouselMode = "timeMachine";
-			functionDefaultTimeMachineTransformation();
-		} else if (mode === "coverFlow") {
-
-			m_currentCarouselMode = "coverFlow";
-			functionDefaultCoverFlowTransformation();
-		}
+		// Set the mode and call function to render new carousel view
+		m_currentCarouselMode = mode;
+		setCarouselViewMode();
 	};
 
 	////////////////////////////////////////////
-	// Private 
+	// Private
 
-	// Initialize
-	var functionInit = function () {
+	// Loads carousel data attributes and sets click event handler
+	var initialize = function () {
 
 		try {
 
-			var $carousel = $('#carousel');
+			m_carousel = document.getElementsByClassName("carousel")[0];
 
 			// Reflection attribute
-			m_createReflection =  $carousel.data('reflection');
-			if ((m_createReflection === undefined) ||
-				(m_createReflection === null)) {
-
-				m_createReflection = false;
-			}
-
-			// Sliders attribute
-			m_createSliders = $carousel.data('sliders');
-			if ((m_createSliders === undefined) ||
-				(m_createSliders === null)) {
-
-				m_createSliders = false;
-			}
+			m_createReflection = m_carousel.getAttribute("data-reflection");
+			m_createReflection = m_createReflection === "true";
 
 			// Mode attribute
-			m_currentCarouselMode =  $carousel.data('mode');
+			m_currentCarouselMode =  m_carousel.getAttribute("data-mode");
 			if ((m_currentCarouselMode === undefined) ||
 				(m_currentCarouselMode === null)) {
 
@@ -122,13 +81,24 @@ function Carousel () {
 			}
 
 			// RGB background color attribute
-			m_backgroundColor = $carousel.data('reflection-color');
+			m_backgroundColor = m_carousel.getAttribute("data-reflection-color");
 			if ((m_backgroundColor === undefined) ||
 				(m_backgroundColor === null)) {
 
 				m_backgroundColor = "rgba(74,86,100)";
 			}
 
+			// Bind event handler
+			m_carousel.addEventListener("click", throttle(function(event) {
+
+				if (event.target !== event.currentTarget) {
+					var parentItem = event.target.parentElement;
+					var parentIndex = parentItem.getAttribute("data-index");
+					transformationHandler(parentItem, parentIndex);
+				}
+				event.stopPropagation();
+			}, 300), false);
+
 			return null;
 		} catch (e) {
 
@@ -136,31 +106,42 @@ function Carousel () {
 		}
 	};
 
-	// Create body carousel
-	var functionCreateBodyCarousel = function () {
+	// Creates a reflection element for each of the images
+	var createReflectiveElements = function () {
 
 		try {
 
-			$imageCollection = $('.image-container');
+			imageCollection = document.getElementsByClassName("image-container");
 
 			if (m_createReflection === true) {
 
-				// container height needs to compensate for reflection image height.
-				//m_containerHeight *= 2;
+				// Add a reflection element to each of the images
+				for (var i = 0; i < imageCollection.length; i++) {
 
-				// Add a reflection div and reflection image for each of the elements
-				// in the image container. This is used to simulate reflection.
-				$imageCollection.each(function( index ) {
+					// Image element that will get the reflection
+					var imageContainer = imageCollection[i];
 
-					var srcImage = $(this).find('img').attr('src');
-					var reflectionDiv =
-						"<div class='reflection'>" +
-							"<div class='before'></div>" +
-							"<img src='" + srcImage +"'>" +
-						"</div>";
-					$(this).append(reflectionDiv);
+					// Set the container index
+					imageContainer.setAttribute("data-index", i);
 
-				});
+					// Extract the source of the image
+					var imgEl = imageContainer.firstElementChild;
+					var srcImage = imgEl.getAttribute("src");
+
+					// Create reflection element
+					var reflectionContainer = document.createElement("div");
+					reflectionContainer.className = "reflection-container";
+					var reflectionGradient = document.createElement("div");
+					reflectionGradient.className = "before";
+					reflectionGradient.style["box-shadow"] = "inset " + m_backgroundColor + " 0 186px 65px";
+					var reflectionImg = document.createElement("img");
+					reflectionImg.setAttribute("src", srcImage);
+					reflectionContainer.appendChild(reflectionGradient);
+					reflectionContainer.appendChild(reflectionImg);
+
+					// Finally perform DOM change by adding reflective element
+					imageContainer.appendChild(reflectionContainer);
+				}
 			}
 
 			return null;
@@ -170,174 +151,21 @@ function Carousel () {
 		}
 	};
 
-	// Style body carousel
-	var functionStyleBodyCarousel = function () {
+	// Sets the carousel view mode (cylinder, time-machine, or cover-flow)
+	var setCarouselViewMode = function () {
 
 		try {
 
-			// Create style section
-		  	var $Style = $("<style media='screen' type='text/css'> </style>").appendTo("head");
+			if (m_currentCarouselMode === "cylinder") {
 
-			// Style container
-			var exception = functionStyleContainer($Style);
-			if (exception !== null) {
-
-				return exception;
+				defaultCylinderTransformation()
 			}
+			else if (m_currentCarouselMode === "timeMachine") {
 
-			// Style container elements
-			exception = functionStyleElements($Style);
-			if (exception !== null) {
-
-				return exception;
-			}
-
-			if (m_currentCarouselMode === "timeMachine") {
-
-				functionDefaultTimeMachineTransformation();
+				defaultTimeMachineTransformation();
 			} else if (m_currentCarouselMode === "coverFlow") {
 
-				functionDefaultCoverFlowTransformation();
-			}
-
-			return null;
-		} catch (e) {
-
-			return e;
-		}
-	};
-
-	// create container element
-	var functionStyleContainer = function ($Style) {
-
-		try {
-
-			var style = "#carousel-container { \r\n" +
-				"\twidth: " + m_containerWidth + "px;\r\n" +
-				"\theight: " + m_containerHeight + "px;\r\n" +
-            	"\tposition: relative;\r\n" +
-				"\ttop: 30px;\r\n" +
-				"\tmargin: 0 auto 40px;\r\n" +
-				"\tborder: 0px solid #CCC;\r\n"  +
-				"\t" + m_attributePrefix + "perspective: 1100px;\r\n" +
-				"}\r\n";
-
-			$Style.append(style);
-
-			return null
-		} catch (e) {
-
-			return e;
-		}
-	};
-
-	// Create carousel element
-	var functionStyleElements = function ($Style) {
-
-		try {
-
-			// Style carousel
-			var style = "#carousel {\r\n" +
-				"\twidth: 100%;\r\n" +
-				"\theight: 100%;\r\n" +
-				"\tposition: absolute;\r\n" +
-				"\t" + m_attributePrefix + "transform: translateZ( -300px ) rotateX(0deg);\r\n" +
-				"\t" + m_attributePrefix + "transform-style: preserve-3d;\r\n" +
-				"\t" + m_attributePrefix + "transition: " + (m_attributePrefix === ""? '-webkit-' : m_attributePrefix) + "transform 1s;\r\n" +
-			"}\r\n";
-
-			// Style carousel image
-			style += "#carousel .image-container {\r\n" +
-				"\tdisplay: block;\r\n" +
-				"\tposition: absolute;\r\n" +
-				"\twidth: 276px;\r\n" +
-				"\theight: 286px;\r\n" +
-				"\tleft: 10px;\r\n" +
-				"\ttop: 10px;\r\n" +
-			"}\r\n";
-
-			// Style carousel reflection
-			style += "#carousel .reflection {\r\n" +
-				"\twidth: 100%;\r\n" +
-				"\theight: 100%;\r\n" +
-				"\t" + m_attributePrefix + "transform: scaleY(-1);\r\n" +
-				"\topacity: .2;\r\n" +
-				"}\r\n";
-
-			// Style before
-			style += ".reflection .before {\r\n" +
-				"\tposition: absolute;\r\n" +
-				"\twidth: 100%;\r\n" +
-				"\theight: 100%;\r\n" +
-				"\tbox-shadow: inset " + m_backgroundColor + " 0 186px 65px;\r\n" +
-				"}\r\n";
-
-
-			// For each figure apply the transformation
-			var degree = 0;
-			var transformation = "";
-
-			// do some trig to figure out how big the carousel
-			// is in 3D space
-			m_carouselRadius = Math.round((290/2) / Math.tan(Math.PI/$imageCollection.length));
-
-			for (var i=0; i<$imageCollection.length; i++) {
-
-				// Image transformation
-				transformation += "#carousel .image-container:nth-child("+ (i+1) +") {\r\n" +
-					"\t" + m_attributePrefix + "transform: rotateY(   "
-						+ degree + "deg ) translateZ( " + m_carouselRadius +"px );\r\n" +
-					"\ttransition: " + (m_attributePrefix === ""? '-webkit-' : m_attributePrefix) + "transform 1s;\r\n" +
-					"}";
-
-				degree += (360/$imageCollection.length);
-			}
-			style += transformation;
-
-			// Style the img
-			style += "#carousel .image-container img {\r\n" +
-				"\theight: inherit;\r\n" +
-				"\twidth: inherit;\r\n" +
-				"\tdisplay: block;\r\n" +
-			"}\r\n";
-
-			$Style.append(style);
-
-			return null;
-		} catch (e) {
-
-			return e;
-		}
-	};
-
-	// Create sliders
-	var functionCreateSliders = function () {
-
-		try {
-
-			if (m_createSliders === true) {
-
-				var $Sliders = $('#carousel-container').parent();
-
-				//var $Sliders = $("<section class='sliders'> </section>").appendTo("body");
-
-				// Rotate X slider
-				var sliderContent = "<section class='sliders'> <label id='rotateXLabel'>Rotate X</label>";
-				sliderContent += "<input type=range min=-50 max=50 value=0 id='rotateXSlider' step='1'> </input>";
-
-				// Rotate Z slider
-				sliderContent += "<label id='translateZLabel'>Translate Z</label>";
-				sliderContent += "<input type=range min=-300 max=300 value=-300 id='translateZSlider' step='5'> </input>";
-
-				// Radio buttons
-				sliderContent += "<div id='flowTypes'>" +
-					"<input id='cylinder' type='radio' name='flows' value='cylinder' checked>Cylinder" +
-					"<input id='timeMachine' type='radio' name='flows' value='timeMachine'>Time Machine" +
-					"<input id='coverFlow' type='radio' name='flows' value='coverFlow'>CoverFlow" +
-				"</div>" +
-				"</section>";
-
-				$Sliders.append(sliderContent);
+				defaultCoverFlowTransformation();
 			}
 
 			return null;
@@ -348,7 +176,7 @@ function Carousel () {
 	};
 
 	// Detect Browser
-	var functionDetectBrowser = function () {
+	var detectBrowser = function () {
 
 		try {
 
@@ -400,188 +228,117 @@ function Carousel () {
 		}
 	};
 
-	// Bind event handler
-	var functionBindEvents = function () {
+	// Throttles the invocation of the transformation function by 300ms
+	var throttle = function (fn, delay) {
 
-		try {
+		var timer = null;
+		return function () {
+			var context = this, args = arguments;
+			clearTimeout(timer);
+			timer = setTimeout(function () {
+				fn.apply(context, args);
+			}, delay);
+		};
+	};
 
-			// Click event for each image
-			$(".image-container").click(function(event) {
+	// Transforms carousel changes upon user click
+	var transformationHandler = function (el, index) {
 
-				if (m_currentCarouselMode === "cylinder") {
+		if (m_currentCarouselMode === "cylinder") {
 
-					var that = this;
-					var clickedImageIndex = $(that).index();
-					var previousSiblingIndex = $(that.previousSibling).index();
+			m_carouselThetaY += (360/imageCollection.length);
+			m_carousel.style[m_attributePrefix+"transform"]  = "translateZ("+m_carouselTranslateDeltaZ+"px) rotateX("+m_carouselRotateDeltaX+"deg) rotateY("+m_carouselThetaY+"deg)";
 
-					previousSiblingIndex = (previousSiblingIndex < 0? $imageCollection.length-1 : previousSiblingIndex);
-					var multiplier = 0;
-					var shiftCount = 0;
-					if (m_centerDisplayedImageIndex === previousSiblingIndex) {
+		} else if (m_currentCarouselMode === "timeMachine") {
 
-						multiplier = 1;
-						shiftCount = 2;
-					} else {
+			if (m_timeMachineForwardDirection === false)  {
 
-						multiplier = -1;
-						shiftCount = -2;
-					}
-					m_centerDisplayedImageIndex = ((clickedImageIndex + ($imageCollection.length) - shiftCount) % ($imageCollection.length));
+				defaultTimeMachineTransformation();
+			} else {
 
-					m_carouselThetaY += (360/$imageCollection.length); // * multiplier;
-					$("#carousel").css(
-						(m_attributePrefix + "transform"),
-						("translateZ( " + m_carouselTranslateDeltaZ + "px ) rotateX(" + m_carouselRotateDeltaX + "deg) rotateY(" + m_carouselThetaY + "deg)"));
+				// Translate X axis the current image so it disappears
+				var imageContainer = imageCollection[m_centerDisplayedImageIndex];
+				imageContainer.style[m_attributePrefix+"transform"] = "translateX( " + 500 + "px ) translateZ( " + 1500 + "px )";
 
-				} else if (m_currentCarouselMode === "timeMachine") {
+				// Transform the rest of the child images
+				var timeMachineDeltaX = 0;
+				var timeMachineDeltaZ = 439;
+				for (var i=m_centerDisplayedImageIndex+1; i<imageCollection.length; i++) {
 
-					if (m_timeMachineForwardDirection === false)  {
-
-						functionDefaultTimeMachineTransformation();
-					} else {
-
-						// Translate X axis the current image so it disappears
-						$('.image-container:nth-child(' + (m_centerDisplayedImageIndex + 1) + ')').css(
-							(m_attributePrefix + "transform"),
-							"translateX( " + 500 + "px ) translateZ( " +
-								1500 + "px )");
-
-						// Transform the rest of the child images
-						var timeMachineDeltaX = 0;
-						var timeMachineDeltaZ = 439;
-						for (var i=m_centerDisplayedImageIndex+2; i<=$imageCollection.length; i++) {
-
-							// Translate X axis the current image so it disappears
-							$('.image-container:nth-child(' + i + ')').css(
-								(m_attributePrefix + "transform"),
-								"translateX( " + timeMachineDeltaX + "px ) translateZ( " + timeMachineDeltaZ +"px )");
-
-							timeMachineDeltaX -= 100;
-							timeMachineDeltaZ -= 100;
-						}
-
-						// Update the current index of the carousel
-						m_centerDisplayedImageIndex += 1;
-
-						// Update if we no longer moving forward
-						m_timeMachineForwardDirection = (m_centerDisplayedImageIndex === $imageCollection.length-1? false :
-							(m_centerDisplayedImageIndex === 0? true : m_timeMachineForwardDirection));
-					}
-				} else if (m_currentCarouselMode === "coverFlow") {
-
-					if (m_timeMachineForwardDirection === false) {
-
-						functionDefaultCoverFlowTransformation();
-					} else {
-
-						// render left side
-						var degreeY = 60;
-						var defaultDeltaX = -530;
-						var defaultDeltaZ = 0;
-						for (var i=m_centerDisplayedImageIndex; i>=0; i--) {
-
-							$('.image-container:nth-child(' + (i+1) + ')').css(
-								(m_attributePrefix + "transform"),
-								"rotateY(" + degreeY + "deg) translateZ(" + defaultDeltaZ +"px) translateX(" + defaultDeltaX + "px)");
-
-							defaultDeltaZ -= 100;
-						}
-
-						// render middle
-						$('.image-container:nth-child(' + (m_centerDisplayedImageIndex+2) + ')').css(
-							(m_attributePrefix + "transform"),
-							"rotateY(" + 0 + "deg) translateZ(" + 430 +"px) translateX(" + 0 + "px)");
-
-						// render right side
-						degreeY = -60;
-						defaultDeltaX = 530;
-						defaultDeltaZ = 0;
-						for (var i=m_centerDisplayedImageIndex+3; i<=$imageCollection.length; i++) {
-
-							$('.image-container:nth-child(' + i + ')').css(
-								(m_attributePrefix + "transform"),
-								"rotateY(" + degreeY + "deg) translateZ(" + defaultDeltaZ +"px) translateX(" + defaultDeltaX + "px)");
-
-							defaultDeltaZ -= 100;
-						}
-
-						// Update the current index of the carousel
-						m_centerDisplayedImageIndex += 1;
-
-						// Update if we no longer moving forward
-						m_timeMachineForwardDirection = (m_centerDisplayedImageIndex === $imageCollection.length-1? false :
-							(m_centerDisplayedImageIndex === 0? true : m_timeMachineForwardDirection));
-					}
+					// Translate X axis the current image so it disappears
+					imageContainer = imageCollection[i];
+					imageContainer.style[m_attributePrefix+"transform"] = "translateX( " + timeMachineDeltaX + "px ) translateZ( " + timeMachineDeltaZ +"px )";
+					timeMachineDeltaX -= 100;
+					timeMachineDeltaZ -= 100;
 				}
-			});
 
-			/*
-			// Change on slider for Rotate X
-			$("#rotateXSlider").on('input', function(e){
+				// Update the current index of the carousel
+				m_centerDisplayedImageIndex += 1;
 
-				m_carouselRotateDeltaX = $(this).val();
-				$('#carousel').css(
+				// Update if we no longer moving forward
+				m_timeMachineForwardDirection = (m_centerDisplayedImageIndex === imageCollection.length-1? false :
+					(m_centerDisplayedImageIndex === 0? true : m_timeMachineForwardDirection));
+			}
+		} else if (m_currentCarouselMode === "coverFlow") {
 
-					(m_attributePrefix + "transform"), "translateZ( " + m_carouselTranslateDeltaZ + "px ) rotateX(" + m_carouselRotateDeltaX + "deg) rotateY(" + m_carouselThetaY + "deg)"
-				);
-			});
+			if (m_timeMachineForwardDirection === false) {
 
-			// Change on slider for Rotate Z
-			$('#translateZSlider').on('input', function(e){
+				defaultCoverFlowTransformation();
+			} else {
 
-				m_carouselTranslateDeltaZ = $(this).val();
-				$('#carousel').css(
+				// render left side
+				var degreeY = 60;
+				var defaultDeltaX = -530;
+				var defaultDeltaZ = 0;
+				var imageContainer = null;
+				for (var i=m_centerDisplayedImageIndex; i>=0; i--) {
 
-					(m_attributePrefix + "transform"), "translateZ( " + m_carouselTranslateDeltaZ + "px ) rotateX(" + m_carouselRotateDeltaX + "deg) rotateY(" + m_carouselThetaY + "deg)"
-				);
-			});
-
-			// Radio button change
-			$('#flowTypes').change(function(e) {
-
-				if (e.target.id === "cylinder") {
-
-					m_currentCarouselMode = "cylinder";
-					functionDefaultCylinderTransformation();
-				} else if (e.target.id === "timeMachine") {
-
-					m_currentCarouselMode = "timeMachine";
-					functionDefaultTimeMachineTransformation();
-				} else if (e.target.id === "coverFlow") {
-
-					m_currentCarouselMode = "coverFlow";
-					functionDefaultCoverFlowTransformation();
+					imageContainer = imageCollection[i];
+					imageContainer.style[m_attributePrefix+"transform"] = "rotateY(" + degreeY + "deg) translateZ(" + defaultDeltaZ +"px) translateX(" + defaultDeltaX + "px)";
+					defaultDeltaZ -= 100;
 				}
-			});
 
-			*/
+				// render middle
+				imageContainer = imageCollection[m_centerDisplayedImageIndex+1];
+				imageContainer.style[m_attributePrefix+"transform"] = "rotateY(" + 0 + "deg) translateZ(" + 430 +"px) translateX(" + 0 + "px)";
 
-			return null;
-		} catch (e) {
+				// render right side
+				degreeY = -60;
+				defaultDeltaX = 530;
+				defaultDeltaZ = 0;
+				for (var i=m_centerDisplayedImageIndex+2; i<imageCollection.length; i++) {
 
-			return e;
+					imageContainer = imageCollection[i];
+					imageContainer.style[m_attributePrefix+"transform"] = "rotateY(" + degreeY + "deg) translateZ(" + defaultDeltaZ +"px) translateX(" + defaultDeltaX + "px)";
+					defaultDeltaZ -= 100;
+				}
+
+				// Update the current index of the carousel
+				m_centerDisplayedImageIndex += 1;
+
+				// Update if we no longer moving forward
+				m_timeMachineForwardDirection = (m_centerDisplayedImageIndex === imageCollection.length-1? false :
+					(m_centerDisplayedImageIndex === 0? true : m_timeMachineForwardDirection));
+			}
 		}
 	};
 
 	// Sets default values for carousel
-	var functionSetDefaults = function () {
+	var setDefaults = function () {
 
 		try {
 
 			// Reset carousel transformation
-			$('#carousel').css(
-				(m_attributePrefix + "transform"),
-				"translateZ( -300px ) rotateX(0deg)"
-			);
+			m_carousel.style[m_attributePrefix+"transform"] = "translateZ( -300px ) rotateX(0deg)";
+
+			// do some trig to figure out how big the carousel
+			// is in 3D space
+			m_carouselRadius = Math.round((290/2) / Math.tan(Math.PI/imageCollection.length));
 
 			// Default carousel X, Y, Z
 			m_carouselRotateDeltaX = 0;
 			m_carouselTranslateDeltaZ = -300;
 			m_carouselThetaY = 0;
-
-			// Default slider values
-			$('#rotateXSlider').val(m_carouselRotateDeltaX);
-			$('#translateZSlider').val(m_carouselTranslateDeltaZ);
 
 			m_centerDisplayedImageIndex = 0;
 
@@ -593,9 +350,9 @@ function Carousel () {
 	};
 
 	// Applies default transformation to TimeMachine mode
-	var functionDefaultTimeMachineTransformation = function () {
+	var defaultTimeMachineTransformation = function () {
 
-		var exception = functionSetDefaults();
+		var exception = setDefaults();
 		if (exception !== null) {
 
 			alert(exception);
@@ -603,13 +360,10 @@ function Carousel () {
 
 		var defaultDeltaX = 0;
 		var defaultDeltaZ = 439;
-		for (var i=1; i<=$imageCollection.length; i++) {
+		for (var i=0; i<imageCollection.length; i++) {
 
-			// Translate X axis the current image so it disappears
-			$('.image-container:nth-child(' + i + ')').css(
-				(m_attributePrefix + "transform"),
-				"translateX( " + defaultDeltaX + "px ) translateZ( " + defaultDeltaZ +"px )");
-
+			var imageContainer = imageCollection[i];
+			imageContainer.style[m_attributePrefix+"transform"] = "translateX( " + defaultDeltaX + "px ) translateZ( " + defaultDeltaZ +"px )";
 			defaultDeltaX -= 100;
 			defaultDeltaZ -= 100;
 		}
@@ -618,47 +372,43 @@ function Carousel () {
 	};
 
 	// Applies default transformation to Cylinder mode
-	var functionDefaultCylinderTransformation = function () {
+	var defaultCylinderTransformation = function () {
 
-		var exception = functionSetDefaults();
+		var exception = setDefaults();
 		if (exception !== null) {
 
 			alert(exception);
 		}
 
 		var degree = 0;
-		for (var i=1; i<=$imageCollection.length; i++) {
+		for (var i=0; i<imageCollection.length; i++) {
 
-			$('.image-container:nth-child(' + i + ')').css(
-				(m_attributePrefix + "transform"),
-				"rotateY( " + degree + "deg ) translateZ( " + m_carouselRadius +"px )");
-			degree += (360/$imageCollection.length);
+			var imageContainer = imageCollection[i];
+			imageContainer.style[m_attributePrefix+"transform"]  = "rotateY( " + degree + "deg ) translateZ( " + m_carouselRadius +"px )";
+			degree += (360/imageCollection.length);
 		}
 	};
 
 	// Applies default transformation to CoverFlow mode
- 	var functionDefaultCoverFlowTransformation = function () {
+ 	var defaultCoverFlowTransformation = function () {
 
-		var exception = functionSetDefaults();
+		var exception = setDefaults();
 		if (exception !== null) {
 
 			alert(exception);
 		}
 
-		// render middle
-		$('.image-container:nth-child(' + 1 + ')').css(
-			(m_attributePrefix + "transform"),
-			"rotateY(" + 0 + "deg) translateZ(" + 430 +"px) translateX(" + 0 + "px)");
+		// middle element
+		var imageContainer = imageCollection[0];
+		imageContainer.style[m_attributePrefix+"transform"] = "rotateY(" + 0 + "deg) translateZ(" + 430 +"px) translateX(" + 0 + "px)";
 
 		var degreeY = -60;
 		var defaultDeltaX = 530;
 		var defaultDeltaZ = 0;
-		for (var i=2; i<=$imageCollection.length; i++) {
+		for (var i=1; i<imageCollection.length; i++) {
 
-			$('.image-container:nth-child(' + i + ')').css(
-				(m_attributePrefix + "transform"),
-				"rotateY(" + degreeY + "deg) translateZ(" + defaultDeltaZ +"px) translateX(" + defaultDeltaX + "px)");
-
+			imageContainer = imageCollection[i];
+			imageContainer.style[m_attributePrefix+"transform"] = "rotateY(" + degreeY + "deg) translateZ(" + defaultDeltaZ +"px) translateX(" + defaultDeltaX + "px)";
 			defaultDeltaZ -= 100;
 		}
 
@@ -667,10 +417,6 @@ function Carousel () {
 
 	///////////////////////////////////
 	// Private Fields
-
-	// Container width and height
-	var m_containerWidth = 310;
-	var m_containerHeight = 330;
 
 	// Carousel X and Y and Z rotation change
 	var m_carouselRotateDeltaX = 0;
@@ -688,7 +434,7 @@ function Carousel () {
 	var m_currentCarouselMode = "cylinder";
 
 	// jquery object for the collection of images
-	var $imageCollection = null;
+	var imageCollection = null;
 
 	//	The current index of center image displayed
 	var m_centerDisplayedImageIndex = 0;
@@ -698,5 +444,7 @@ function Carousel () {
 
 	// Default values
 	var m_createReflection = false;
-	var m_createSliders = false;
+
+	// Carousel element
+	var m_carousel = null;
 }
